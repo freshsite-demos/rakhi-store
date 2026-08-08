@@ -9,7 +9,7 @@ import Header from '../components/Header';
 import ProductGrid from '../components/ProductGrid';
 import { SearchBar } from '../components/SearchBar';
 import SocietyPicker from '../components/SocietyPicker';
-import { ArrowRight, Filter, RefreshCw, ShoppingCart, Sparkles } from 'lucide-react';
+import { ArrowRight, Filter, RefreshCw, ShoppingCart, Sparkles, MapPin } from 'lucide-react';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
@@ -63,13 +63,19 @@ export const Home: React.FC = () => {
 
   // Fetch products — re-fetch when region changes
   useEffect(() => {
+    if (!selectedSociety) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+
     const fetchProds = async () => {
       setLoading(true);
       try {
         const params: any = { sort: sortBy };
         if (searchVal) params.search = searchVal;
         if (activeCategory) params.category = activeCategory;
-        if (selectedSociety) params.societyId = selectedSociety._id;
+        params.societyId = selectedSociety._id;
 
         const res = await getProducts(params);
         if (res.success) {
@@ -292,7 +298,30 @@ export const Home: React.FC = () => {
             </div>
 
             {/* Product Grid display */}
-            <ProductGrid products={products} loading={loading} />
+            {!selectedSociety ? (
+              <div className="bg-white border border-zinc-100 rounded-3xl p-8 md:p-12 text-center flex flex-col items-center justify-center gap-4 shadow-sm my-4">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 shadow-inner">
+                  <MapPin className="w-8 h-8" />
+                </div>
+                <div className="max-w-md">
+                  <h3 className="font-serif-display font-extrabold text-zinc-950 text-xl md:text-2xl">
+                    Select Your Location
+                  </h3>
+                  <p className="text-xs md:text-sm text-zinc-500 font-medium mt-1.5 leading-relaxed">
+                    Please choose your society or locality to view handcrafted Rakhis available for delivery in your area.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSocietyModal(true)}
+                  className="mt-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-zinc-950 font-black text-xs md:text-sm px-6 py-3 rounded-xl shadow-md shadow-amber-500/10 transition-all active:scale-95 flex items-center gap-2 uppercase tracking-wider"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Select Location Now
+                </button>
+              </div>
+            ) : (
+              <ProductGrid products={products} loading={loading} />
+            )}
           </div>
         </div>
       </main>
