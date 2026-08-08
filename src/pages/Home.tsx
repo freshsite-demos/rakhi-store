@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { getProducts } from '../services/product.service';
 import { getCategories } from '../services/category.service';
-import type { Product, Category } from '../types';
+import { getSocieties } from '../services/society.service';
+import type { Product, Category, Society } from '../types';
 import Header from '../components/Header';
 import ProductGrid from '../components/ProductGrid';
 import { SearchBar } from '../components/SearchBar';
+import SocietyPicker from '../components/SocietyPicker';
 import { ArrowRight, Filter, RefreshCw, ShoppingCart, Sparkles } from 'lucide-react';
 
 export const Home: React.FC = () => {
@@ -17,7 +19,18 @@ export const Home: React.FC = () => {
   // State
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [societies, setSocieties] = useState<Society[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Region/Society state — persisted in localStorage
+  const STORAGE_KEY = 'nsb_selected_society';
+  const [selectedSociety, setSelectedSociety] = useState<Society | null>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  });
+  const [showSocietyModal, setShowSocietyModal] = useState(!localStorage.getItem(STORAGE_KEY));
 
   // Search & Filter State
   const searchVal = searchParams.get('q') || '';
@@ -31,17 +44,24 @@ export const Home: React.FC = () => {
     const fetchCats = async () => {
       try {
         const res = await getCategories(true);
-        if (res.success) {
-          setCategories(res.data);
-        }
-      } catch (err) {
-        console.error('Failed to load categories', err);
-      }
+        if (res.success) setCategories(res.data);
+      } catch (err) { console.error('Failed to load categories', err); }
     };
     fetchCats();
   }, []);
 
-  // Fetch products
+  // Load active societies for picker
+  useEffect(() => {
+    const fetchSocieties = async () => {
+      try {
+        const res = await getSocieties(true);
+        if (res.success) setSocieties(res.data);
+      } catch (err) { console.error('Failed to load societies', err); }
+    };
+    fetchSocieties();
+  }, []);
+
+  // Fetch products — re-fetch when region changes
   useEffect(() => {
     const fetchProds = async () => {
       setLoading(true);
@@ -49,6 +69,7 @@ export const Home: React.FC = () => {
         const params: any = { sort: sortBy };
         if (searchVal) params.search = searchVal;
         if (activeCategory) params.category = activeCategory;
+        if (selectedSociety) params.societyId = selectedSociety._id;
 
         const res = await getProducts(params);
         if (res.success) {
@@ -61,15 +82,9 @@ export const Home: React.FC = () => {
       }
     };
 
-    const delayDebounce = setTimeout(
-      () => {
-        fetchProds();
-      },
-      searchVal ? 300 : 0
-    );
-
+    const delayDebounce = setTimeout(() => { fetchProds(); }, searchVal ? 300 : 0);
     return () => clearTimeout(delayDebounce);
-  }, [searchVal, activeCategory, sortBy]);
+  }, [searchVal, activeCategory, sortBy, selectedSociety]);
 
   const handleSearchChange = (val: string) => {
     const params = new URLSearchParams(searchParams);
@@ -101,10 +116,31 @@ export const Home: React.FC = () => {
     setSearchParams({});
   };
 
+  const handleSocietySelect = (society: Society) => {
+    setSelectedSociety(society);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(society));
+  };
+
+  const handleSocietyClear = () => {
+    setSelectedSociety(null);
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
   return (
     <div className="min-h-screen bg-zinc-50/40 pb-24 md:pb-12 text-zinc-900">
       {/* Premium Sticky Header */}
       <Header searchVal={searchVal} onSearchChange={handleSearchChange} />
+
+      {/* Region Society Picker */}
+      <SocietyPicker
+        societies={societies}
+        selectedSociety={selectedSociety}
+        onSelect={handleSocietySelect}
+        onClear={handleSocietyClear}
+        showModal={showSocietyModal}
+        onOpenModal={() => setShowSocietyModal(true)}
+        onCloseModal={() => setShowSocietyModal(false)}
+      />
 
       {/* Luxury Festive Hero Section */}
       <section className="px-4 md:px-8 py-8 md:py-12 max-w-7xl mx-auto">

@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import { getProducts, deleteProduct } from '../../services/product.service';
-import type { Product } from '../../types';
+import { getSocieties } from '../../services/society.service';
+import type { Product, Society } from '../../types';
 import { useToast } from '../../components/Toast';
-import { Plus, Edit2, Trash2, ShieldAlert } from 'lucide-react';
+import { Plus, Edit2, Trash2, ShieldAlert, Globe, MapPin } from 'lucide-react';
 
 export const Products: React.FC = () => {
   const { showToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
+  const [societyMap, setSocietyMap] = useState<Record<string, string>>({}); // id → name
   const [loading, setLoading] = useState(true);
 
   const loadProducts = async () => {
@@ -28,6 +30,16 @@ export const Products: React.FC = () => {
 
   useEffect(() => {
     loadProducts();
+    // Load societies to resolve IDs → names
+    getSocieties(true)
+      .then((res) => {
+        if (res.success) {
+          const map: Record<string, string> = {};
+          res.data.forEach((s: Society) => { map[s._id] = s.name; });
+          setSocietyMap(map);
+        }
+      })
+      .catch((err) => console.error('Failed to load societies', err));
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
@@ -90,6 +102,7 @@ export const Products: React.FC = () => {
                     <th className="py-4 px-4">Original Price</th>
                     <th className="py-4 px-4">Discounted Price</th>
                     <th className="py-4 px-4">Stock</th>
+                    <th className="py-4 px-4">Regions</th>
                     <th className="py-4 px-4">Status</th>
                     <th className="py-4 px-6 text-right">Actions</th>
                   </tr>
@@ -149,6 +162,33 @@ export const Products: React.FC = () => {
                           <span className="text-rose-600 font-bold">{product.stock} left</span>
                         ) : (
                           <span className="text-zinc-700">{product.stock} units</span>
+                        )}
+                      </td>
+
+                      {/* Regions */}
+                      <td className="py-4 px-4 max-w-[180px]">
+                        {!product.availableSocieties || product.availableSocieties.length === 0 ? (
+                          <span className="flex items-center gap-1 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md uppercase tracking-wide">
+                            <Globe className="w-3 h-3" />
+                            All Regions
+                          </span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {product.availableSocieties.slice(0, 2).map((id) => (
+                              <span
+                                key={id}
+                                className="flex items-center gap-0.5 text-[9px] font-extrabold text-violet-700 bg-violet-50 border border-violet-100 px-1.5 py-0.5 rounded-md uppercase tracking-wide whitespace-nowrap"
+                              >
+                                <MapPin className="w-2.5 h-2.5 shrink-0" />
+                                {societyMap[id] || id}
+                              </span>
+                            ))}
+                            {product.availableSocieties.length > 2 && (
+                              <span className="text-[9px] font-extrabold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded-md">
+                                +{product.availableSocieties.length - 2} more
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 

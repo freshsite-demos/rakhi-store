@@ -3,9 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
 import { getProductById, updateProduct } from '../../services/product.service';
 import { getCategories } from '../../services/category.service';
-import type { Category } from '../../types';
+import { getSocieties } from '../../services/society.service';
+import type { Category, Society } from '../../types';
 import { useToast } from '../../components/Toast';
-import { ArrowLeft, Save, Upload, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, Upload, AlertCircle, Globe, MapPin } from 'lucide-react';
 
 export const EditProduct: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export const EditProduct: React.FC = () => {
 
   // State
   const [categories, setCategories] = useState<Category[]>([]);
+  const [societies, setSocieties] = useState<Society[]>([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -21,6 +23,7 @@ export const EditProduct: React.FC = () => {
   const [discountedPrice, setDiscountedPrice] = useState('');
   const [stock, setStock] = useState('');
   const [isAvailable, setIsAvailable] = useState(true);
+  const [selectedSocieties, setSelectedSocieties] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -28,7 +31,7 @@ export const EditProduct: React.FC = () => {
   const [loadingCats, setLoadingCats] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Load categories and product data
+  // Load categories
   useEffect(() => {
     const fetchCats = async () => {
       try {
@@ -45,6 +48,23 @@ export const EditProduct: React.FC = () => {
     fetchCats();
   }, []);
 
+  // Load societies
+  useEffect(() => {
+    const fetchSoc = async () => {
+      try {
+        const res = await getSocieties(true);
+        if (res.success) setSocieties(res.data);
+      } catch (err) { console.error('Failed to load societies', err); }
+    };
+    fetchSoc();
+  }, []);
+
+  const toggleSociety = (id: string) => {
+    setSelectedSocieties((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+  };
+
   useEffect(() => {
     const loadProduct = async () => {
       if (!id) return;
@@ -60,6 +80,8 @@ export const EditProduct: React.FC = () => {
           setStock(String(p.stock));
           setIsAvailable(p.isAvailable);
           setImagePreview(p.imageUrl);
+          // Normalize to plain strings — ObjectId objects from MongoDB may not compare with ===
+          setSelectedSocieties((p.availableSocieties || []).map(String));
         }
       } catch (err) {
         console.error('Failed to load product details', err);
@@ -106,6 +128,7 @@ export const EditProduct: React.FC = () => {
       formData.append('category', category);
       formData.append('stock', stock);
       formData.append('isAvailable', String(isAvailable));
+      formData.append('availableSocieties', JSON.stringify(selectedSocieties));
 
       if (imageFile) {
         formData.append('image', imageFile);
@@ -301,6 +324,53 @@ export const EditProduct: React.FC = () => {
                 <label htmlFor="isAvailable" className="text-xs font-bold text-zinc-800 select-none uppercase tracking-wide">
                   Make product available for sale immediately
                 </label>
+              </div>
+
+              {/* Region Availability */}
+              <div className="flex flex-col gap-3 border border-zinc-100 rounded-2xl p-4 bg-zinc-50/50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-amber-600" />
+                      Region Availability
+                    </label>
+                    <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">
+                      {selectedSocieties.length === 0
+                        ? 'No regions selected — product shows in all areas'
+                        : `Restricted to ${selectedSocieties.length} region(s)`}
+                    </p>
+                  </div>
+                  {selectedSocieties.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSocieties([])}
+                      className="text-[10px] text-amber-700 font-black uppercase tracking-wide border border-amber-200 px-2 py-1 rounded-lg hover:bg-amber-50 transition-all flex items-center gap-1"
+                    >
+                      <Globe className="w-3 h-3" />
+                      All Regions
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {societies.map((s) => (
+                    <label
+                      key={s._id}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-all select-none ${
+                        selectedSocieties.includes(s._id)
+                          ? 'bg-amber-50 border-amber-300 text-amber-900'
+                          : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedSocieties.includes(s._id)}
+                        onChange={() => toggleSociety(s._id)}
+                        className="w-3.5 h-3.5 rounded border-zinc-300 text-amber-600 focus:ring-amber-500"
+                      />
+                      <span className="text-xs font-bold">{s.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               {/* Saving warnings */}

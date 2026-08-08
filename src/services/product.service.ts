@@ -8,6 +8,7 @@ export interface GetProductsParams {
   maxPrice?: number;
   sort?: string;
   isAvailable?: boolean;
+  societyId?: string;
 }
 
 export const getProducts = async (params?: GetProductsParams) => {

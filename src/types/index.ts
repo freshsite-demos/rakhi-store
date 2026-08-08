@@ -8,6 +8,7 @@ export interface Product {
   category: string;
   stock: number;
   isAvailable: boolean;
+  availableSocieties: string[];
   createdAt: string;
   updatedAt: string;
 }
