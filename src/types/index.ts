@@ -94,3 +94,24 @@ export interface CartItem {
   product: Product;
   quantity: number;
 }
+
+export interface Review {
+  _id: string;
+  orderNumber: string;
+  productId: string;
+  productName: string;
+  customerName: string;
+  customerEmail?: string;
+  rating?: number;
+  comment?: string;
+  isApproved: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewSummary {
+  averageRating: number;
+  totalReviews: number;
+  totalRatings: number;
+  distribution: Record<number, number>;
+}

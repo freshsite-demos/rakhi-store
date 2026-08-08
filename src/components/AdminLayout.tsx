@@ -11,6 +11,7 @@ import {
   Eye,
   Menu,
   X,
+  Star,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -55,6 +56,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => 
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Products', path: '/admin/products', icon: ShoppingBag },
     { name: 'Orders', path: '/admin/orders', icon: ClipboardList },
+    { name: 'Reviews', path: '/admin/reviews', icon: Star },
     { name: 'Coupons', path: '/admin/coupons', icon: Ticket },
     { name: 'Societies', path: '/admin/societies', icon: MapPin },
   ];

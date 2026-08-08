@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProductById } from '../services/product.service';
-import type { Product } from '../types';
+import { getProductReviews } from '../services/review.service';
+import type { Product, Review, ReviewSummary } from '../types';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../components/Toast';
 import Header from '../components/Header';
 import QuantitySelector from '../components/QuantitySelector';
-import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, ShieldCheck, Truck, RotateCcw, Star, MessageSquare, CheckCircle } from 'lucide-react';
 
 export const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,16 +18,27 @@ export const ProductDetails: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewSummary, setReviewSummary] = useState<ReviewSummary | null>(null);
+
   const cartItem = cartItems.find((item) => item.product._id === id);
   const quantity = cartItem ? cartItem.quantity : 0;
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductAndReviews = async () => {
       if (!id) return;
       try {
         const res = await getProductById(id);
         if (res.success) {
           setProduct(res.data);
+        }
+
+        // Fetch approved reviews
+        const reviewRes = await getProductReviews(id);
+        if (reviewRes.success) {
+          setReviews(reviewRes.data);
+          setReviewSummary(reviewRes.summary);
         }
       } catch (err) {
         console.error('Failed to load product details', err);
@@ -35,7 +47,7 @@ export const ProductDetails: React.FC = () => {
         setLoading(false);
       }
     };
-    fetchProduct();
+    fetchProductAndReviews();
   }, [id]);
 
   if (loading) {
@@ -102,7 +114,7 @@ export const ProductDetails: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50/40 text-zinc-900">
+    <div className="min-h-screen bg-zinc-50/40 text-zinc-900 pb-20">
       <Header showSearch={false} />
 
       <main className="max-w-4xl mx-auto px-4 py-8">
@@ -140,9 +152,21 @@ export const ProductDetails: React.FC = () => {
           {/* Right: Info Area */}
           <div className="flex-grow flex flex-col justify-between">
             <div>
-              <span className="text-[9px] uppercase font-black tracking-widest text-amber-600 bg-amber-50/60 border border-amber-100/50 px-3 py-1 rounded-lg self-start inline-block mb-3">
-                {product.category}
-              </span>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-[9px] uppercase font-black tracking-widest text-amber-600 bg-amber-50/60 border border-amber-100/50 px-3 py-1 rounded-lg">
+                  {product.category}
+                </span>
+
+                {/* Rating Badge Header */}
+                {reviewSummary && reviewSummary.totalRatings > 0 && (
+                  <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-2.5 py-1 rounded-lg">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span className="text-xs font-black text-amber-800">{reviewSummary.averageRating}</span>
+                    <span className="text-[10px] font-bold text-amber-600">({reviewSummary.totalReviews})</span>
+                  </div>
+                )}
+              </div>
+
               <h1 className="text-2xl md:text-3.5xl font-serif-display font-bold text-zinc-950 leading-tight">
                 {product.name}
               </h1>
@@ -243,6 +267,107 @@ export const ProductDetails: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Customer Ratings & Reviews Section */}
+        <section className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-serif-display font-bold text-zinc-950 text-xl md:text-2xl flex items-center gap-2">
+                <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                Customer Ratings & Reviews
+              </h3>
+              <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider mt-0.5">
+                Verified reviews from resident buyers
+              </p>
+            </div>
+
+            {reviewSummary && reviewSummary.totalRatings > 0 && (
+              <div className="flex items-center gap-2 bg-white border border-zinc-100 px-4 py-2 rounded-2xl shadow-sm">
+                <div className="text-2xl font-black text-zinc-950">{reviewSummary.averageRating}</div>
+                <div className="flex flex-col">
+                  <div className="flex items-center text-amber-400">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-3.5 h-3.5 ${
+                          s <= Math.round(reviewSummary.averageRating)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-zinc-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-zinc-400 font-bold">{reviewSummary.totalReviews} ratings</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {reviews.length === 0 ? (
+            <div className="bg-white border border-zinc-100 rounded-3xl p-8 text-center flex flex-col items-center gap-2 shadow-sm">
+              <MessageSquare className="w-8 h-8 text-zinc-300" />
+              <p className="font-serif-display font-extrabold text-zinc-950 text-base">No reviews published yet</p>
+              <p className="text-xs text-zinc-400 max-w-sm">
+                Have you ordered this item? Rate or review it using the link sent to your email after delivery!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {reviews.map((review) => (
+                <div
+                  key={review._id}
+                  className="bg-white border border-zinc-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between gap-4"
+                >
+                  <div className="flex flex-col gap-2">
+                    {/* Rating stars & verified badge */}
+                    <div className="flex items-center justify-between">
+                      {review.rating ? (
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <Star
+                              key={s}
+                              className={`w-4 h-4 ${
+                                s <= review.rating! ? 'fill-amber-400 text-amber-400' : 'text-zinc-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
+                          Verified Feedback
+                        </span>
+                      )}
+
+                      <span className="inline-flex items-center gap-1 text-[9px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100/60 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                        <CheckCircle className="w-2.5 h-2.5 text-emerald-600" />
+                        Verified Purchase
+                      </span>
+                    </div>
+
+                    {/* Review text */}
+                    {review.comment && (
+                      <p className="text-xs text-zinc-700 font-medium leading-relaxed mt-1 whitespace-pre-line">
+                        "{review.comment}"
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Customer name & date */}
+                  <div className="flex items-center justify-between border-t border-zinc-50 pt-3 text-[11px] text-zinc-400 font-medium">
+                    <span className="font-bold text-zinc-800">{review.customerName}</span>
+                    <span>
+                      {new Date(review.createdAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );
