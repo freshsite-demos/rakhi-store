@@ -5,6 +5,7 @@ export interface CreateOrderPayload {
   customer: {
     name: string;
     phone: string;
+    email?: string;
   };
   deliveryAddress: {
     societyId: string;
@@ -37,5 +38,10 @@ export const getOrderById = async (id: string) => {
 
 export const updateOrderStatus = async (id: string, status: string) => {
   const response = await api.patch<{ success: boolean; data: Order; message?: string }>(`/orders/${id}/status`, { status });
+  return response.data;
+};
+
+export const trackOrder = async (orderNumber: string) => {
+  const response = await api.get<{ success: boolean; data: Order; message?: string }>(`/orders/track/${orderNumber}`);
   return response.data;
 };

@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
-import { CheckCircle2, ShoppingBag, MapPin, ClipboardList } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, MapPin, ClipboardList, PackageCheck } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export const OrderSuccess: React.FC = () => {
   const location = useLocation();
@@ -15,6 +16,33 @@ export const OrderSuccess: React.FC = () => {
       navigate('/');
     }
   }, [order, navigate]);
+
+  // Celebratory confetti burst
+  useEffect(() => {
+    if (order) {
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 };
+
+      const randomInRange = (min: number, max: number) => {
+        return Math.random() * (max - min) + min;
+      };
+
+      const interval: any = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 250);
+
+      return () => clearInterval(interval);
+    }
+  }, [order]);
 
   if (!order) return null;
 
@@ -60,7 +88,9 @@ export const OrderSuccess: React.FC = () => {
                 <h4 className="font-extrabold text-zinc-900 leading-snug">Delivery Location</h4>
                 <p className="text-zinc-600 font-medium mt-1">
                   {order.deliveryAddress.societyName} <br />
-                  {order.deliveryAddress.block}, Floor {order.deliveryAddress.floor}, Flat {order.deliveryAddress.flatNumber}
+                  {order.deliveryAddress.block && order.deliveryAddress.block !== 'N/A'
+                    ? `${order.deliveryAddress.block}, Floor ${order.deliveryAddress.floor}, Flat ${order.deliveryAddress.flatNumber}`
+                    : `Detailed Address: ${order.deliveryAddress.flatNumber}`}
                 </p>
                 {order.deliveryAddress.instructions && (
                   <p className="text-zinc-400 text-xs italic mt-1.5">
@@ -87,14 +117,24 @@ export const OrderSuccess: React.FC = () => {
             </div>
           </div>
 
-          {/* Action button */}
-          <Link
-            to="/"
-            className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-extrabold text-sm py-4 rounded-2xl shadow-md transition-all active:scale-[0.98] mt-10 uppercase tracking-widest flex items-center justify-center gap-2"
-          >
-            <ShoppingBag className="w-4 h-4 text-amber-400" />
-            Continue Shopping
-          </Link>
+          {/* Action buttons */}
+          <div className="w-full flex flex-col sm:flex-row gap-3 mt-10">
+            <Link
+              to="/track"
+              state={{ orderNumber: order.orderNumber }}
+              className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs py-4 rounded-2xl shadow-md transition-all active:scale-[0.98] uppercase tracking-widest flex items-center justify-center gap-2"
+            >
+              <PackageCheck className="w-4 h-4" />
+              Track Order
+            </Link>
+            <Link
+              to="/"
+              className="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-extrabold text-xs py-4 rounded-2xl shadow-md transition-all active:scale-[0.98] uppercase tracking-widest flex items-center justify-center gap-2"
+            >
+              <ShoppingBag className="w-4 h-4 text-amber-400" />
+              Continue Shopping
+            </Link>
+          </div>
         </div>
       </main>
     </div>

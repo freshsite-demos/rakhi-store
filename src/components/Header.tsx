@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { ShoppingBag, Gift } from 'lucide-react';
+import { ShoppingBag, Gift, Package } from 'lucide-react';
 import CartDrawer from './CartDrawer';
 import SearchBar from './SearchBar';
 
@@ -54,7 +54,15 @@ export const Header: React.FC<HeaderProps> = ({
             <span>View Offers</span>
           </Link>
 
-
+          {/* Track Order Button */}
+          <Link
+            to="/track"
+            className="p-2 rounded-xl text-zinc-500 hover:text-zinc-950 hover:bg-zinc-50 border border-transparent hover:border-zinc-200/50 transition-all duration-200 flex items-center gap-1.5"
+            title="Track Order"
+          >
+            <Package className="w-4.5 h-4.5 text-amber-600" />
+            <span className="hidden sm:inline text-xs font-black uppercase tracking-wider">Track</span>
+          </Link>
 
           {/* Cart Button */}
           <button

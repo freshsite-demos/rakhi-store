@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useCart } from '../context/CartContext';
@@ -8,11 +8,12 @@ import { createOrder } from '../services/order.service';
 import type { Society, Block } from '../types';
 import Header from '../components/Header';
 import CouponInput from '../components/CouponInput';
-import { ArrowLeft, MapPin, Phone, User, MessageSquare, ShoppingBag, Landmark } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, User, MessageSquare, ShoppingBag, Landmark, Mail } from 'lucide-react';
 
 interface CheckoutFormData {
   name: string;
   phone: string;
+  email?: string;
   societyId: string;
   block?: string;
   floor?: string;
@@ -31,6 +32,7 @@ export const Checkout: React.FC = () => {
   const [selectedBlock, setSelectedBlock] = useState<Block | null>(null);
   const [loadingSocieties, setLoadingSocieties] = useState(true);
   const [submittingOrder, setSubmittingOrder] = useState(false);
+  const orderPlacedRef = useRef(false);
 
   const {
     register,
@@ -42,6 +44,7 @@ export const Checkout: React.FC = () => {
     defaultValues: {
       name: '',
       phone: '',
+      email: '',
       societyId: '',
       block: '',
       floor: '',
@@ -101,9 +104,9 @@ export const Checkout: React.FC = () => {
     }
   }, [watchedBlock, selectedSociety, setValue]);
 
-  // If cart is empty, redirect back
+  // If cart is empty, redirect back (but not if we just placed an order successfully)
   useEffect(() => {
-    if (cartItems.length === 0 && !submittingOrder) {
+    if (cartItems.length === 0 && !submittingOrder && !orderPlacedRef.current) {
       navigate('/');
     }
   }, [cartItems, navigate, submittingOrder]);
@@ -120,6 +123,7 @@ export const Checkout: React.FC = () => {
         customer: {
           name: data.name,
           phone: data.phone,
+          email: data.email?.trim() || undefined,
         },
         deliveryAddress: {
           societyId: data.societyId,
@@ -137,11 +141,13 @@ export const Checkout: React.FC = () => {
 
       const result = await createOrder(orderPayload);
       if (result.success && result.data) {
+        orderPlacedRef.current = true; // prevent empty-cart redirect
         showToast('Order placed successfully!', 'success');
-        clearCart();
         navigate('/order-success', { state: { order: result.data } });
+        clearCart();
       } else {
         showToast(result.message || 'Failed to place order', 'error');
+        setSubmittingOrder(false);
       }
     } catch (err: any) {
       console.error('Order placement failed', err);
@@ -149,7 +155,6 @@ export const Checkout: React.FC = () => {
         err.response?.data?.message || 'Something went wrong while placing your order. Please try again.',
         'error'
       );
-    } finally {
       setSubmittingOrder(false);
     }
   };
@@ -217,7 +222,31 @@ export const Checkout: React.FC = () => {
               {errors.phone && <span className="text-rose-500 text-xs mt-0.5">{errors.phone.message}</span>}
             </div>
 
-            {/* Dropdowns section */}
+            {/* Email — optional for status notifications */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-zinc-400" />
+                Email Address
+                <span className="ml-auto text-[9px] font-black uppercase tracking-widest bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">Optional</span>
+              </label>
+              <input
+                type="email"
+                placeholder="e.g. yourname@gmail.com"
+                className={`bg-zinc-50/50 border rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all ${
+                  errors.email ? 'border-rose-400 focus:border-rose-500' : 'border-zinc-200'
+                }`}
+                {...register('email', {
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: 'Please enter a valid email address',
+                  },
+                })}
+              />
+              {errors.email
+                ? <span className="text-rose-500 text-xs mt-0.5">{errors.email.message}</span>
+                : <span className="text-zinc-400 text-[10px] font-semibold mt-0.5">📬 Get notified by email whenever your order status changes</span>
+              }
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Society */}
               <div className={`flex flex-col gap-1.5 ${isLocalityMode ? 'sm:col-span-3' : ''}`}>

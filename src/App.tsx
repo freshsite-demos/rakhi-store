@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import ProductDetails from './pages/ProductDetails';
 import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
+import TrackOrder from './pages/TrackOrder';
 
 // Admin pages
 import Login from './pages/admin/Login';
@@ -32,6 +33,7 @@ const App: React.FC = () => {
               <Route path="/products/:id" element={<ProductDetails />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-success" element={<OrderSuccess />} />
+              <Route path="/track" element={<TrackOrder />} />
 
               {/* Admin Portal */}
               <Route path="/admin/login" element={<Login />} />

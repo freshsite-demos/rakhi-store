@@ -71,6 +71,7 @@ export interface DeliveryAddress {
 export interface Customer {
   name: string;
   phone: string;
+  email?: string;
 }
 
 export interface Order {
