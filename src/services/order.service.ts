@@ -8,8 +8,8 @@ export interface CreateOrderPayload {
   };
   deliveryAddress: {
     societyId: string;
-    block: string;
-    floor: string;
+    block?: string;
+    floor?: string;
     flatNumber: string;
     instructions?: string;
   };

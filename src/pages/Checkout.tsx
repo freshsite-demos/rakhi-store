@@ -14,8 +14,8 @@ interface CheckoutFormData {
   name: string;
   phone: string;
   societyId: string;
-  block: string;
-  floor: string;
+  block?: string;
+  floor?: string;
   flatNumber: string;
   instructions?: string;
 }
@@ -48,11 +48,14 @@ export const Checkout: React.FC = () => {
       flatNumber: '',
       instructions: '',
     },
+    shouldUnregister: true,
   });
 
   // Watch fields to trigger dropdown updates
   const watchedSocietyId = watch('societyId');
   const watchedBlock = watch('block');
+
+  const isLocalityMode = !!(selectedSociety && (selectedSociety.isLocality || !selectedSociety.blocks || selectedSociety.blocks.length === 0));
 
   // Load societies
   useEffect(() => {
@@ -120,8 +123,8 @@ export const Checkout: React.FC = () => {
         },
         deliveryAddress: {
           societyId: data.societyId,
-          block: data.block,
-          floor: data.floor,
+          block: isLocalityMode ? undefined : data.block,
+          floor: isLocalityMode ? undefined : data.floor,
           flatNumber: data.flatNumber,
           instructions: data.instructions,
         },
@@ -217,22 +220,22 @@ export const Checkout: React.FC = () => {
             {/* Dropdowns section */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Society */}
-              <div className="flex flex-col gap-1.5">
+              <div className={`flex flex-col gap-1.5 ${isLocalityMode ? 'sm:col-span-3' : ''}`}>
                 <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Landmark className="w-3.5 h-3.5 text-zinc-400" />
-                  Society
+                  Society / Locality
                 </label>
                 <select
                   disabled={loadingSocieties}
                   className={`bg-zinc-50/50 border rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-800 focus:outline-none focus:bg-white focus:border-amber-500 transition-all ${
                     errors.societyId ? 'border-rose-400' : 'border-zinc-200'
                   }`}
-                  {...register('societyId', { required: 'Please select your society' })}
+                  {...register('societyId', { required: 'Please select delivery location' })}
                 >
-                  <option value="">Select Society</option>
+                  <option value="">Select Location</option>
                   {societies.map((s) => (
                     <option key={s._id} value={s._id}>
-                      {s.name}
+                      {s.name} {s.isLocality || !s.blocks || s.blocks.length === 0 ? '(Locality)' : ''}
                     </option>
                   ))}
                 </select>
@@ -240,56 +243,62 @@ export const Checkout: React.FC = () => {
               </div>
 
               {/* Block */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Block / Tower</label>
-                <select
-                  disabled={!selectedSociety}
-                  className={`bg-zinc-50/50 border rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-800 focus:outline-none focus:bg-white focus:border-amber-500 transition-all ${
-                    errors.block ? 'border-rose-400' : 'border-zinc-200'
-                  }`}
-                  {...register('block', { required: 'Select block' })}
-                >
-                  <option value="">Select Block</option>
-                  {selectedSociety?.blocks.map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.block && <span className="text-rose-500 text-xs mt-0.5">{errors.block.message}</span>}
-              </div>
+              {!isLocalityMode && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Block / Tower</label>
+                  <select
+                    disabled={!selectedSociety}
+                    className={`bg-zinc-50/50 border rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-800 focus:outline-none focus:bg-white focus:border-amber-500 transition-all ${
+                      errors.block ? 'border-rose-400' : 'border-zinc-200'
+                    }`}
+                    {...register('block', { required: selectedSociety && !isLocalityMode ? 'Select block' : false })}
+                  >
+                    <option value="">Select Block</option>
+                    {selectedSociety?.blocks.map((b) => (
+                      <option key={b.name} value={b.name}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.block && <span className="text-rose-500 text-xs mt-0.5">{errors.block.message}</span>}
+                </div>
+              )}
 
               {/* Floor */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Floor</label>
-                <select
-                  disabled={!selectedBlock}
-                  className={`bg-zinc-50/50 border rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-800 focus:outline-none focus:bg-white focus:border-amber-500 transition-all ${
-                    errors.floor ? 'border-rose-400' : 'border-zinc-200'
-                  }`}
-                  {...register('floor', { required: 'Select floor' })}
-                >
-                  <option value="">Select Floor</option>
-                  {selectedBlock?.floors.map((fl) => (
-                    <option key={fl} value={fl}>
-                      {fl}
-                    </option>
-                  ))}
-                </select>
-                {errors.floor && <span className="text-rose-500 text-xs mt-0.5">{errors.floor.message}</span>}
-              </div>
+              {!isLocalityMode && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Floor</label>
+                  <select
+                    disabled={!selectedBlock}
+                    className={`bg-zinc-50/50 border rounded-xl px-3 py-2.5 text-sm font-semibold text-zinc-800 focus:outline-none focus:bg-white focus:border-amber-500 transition-all ${
+                      errors.floor ? 'border-rose-400' : 'border-zinc-200'
+                    }`}
+                    {...register('floor', { required: selectedSociety && !isLocalityMode ? 'Select floor' : false })}
+                  >
+                    <option value="">Select Floor</option>
+                    {selectedBlock?.floors.map((fl) => (
+                      <option key={fl} value={fl}>
+                        {fl}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.floor && <span className="text-rose-500 text-xs mt-0.5">{errors.floor.message}</span>}
+                </div>
+              )}
             </div>
 
             {/* Flat number */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">Flat / House Number</label>
+              <label className="text-xs font-bold text-zinc-700 uppercase tracking-wide">
+                {isLocalityMode ? 'Detailed Delivery Address' : 'Flat / House Number'}
+              </label>
               <input
                 type="text"
-                placeholder="e.g. 4F, 202, Block A-404"
+                placeholder={isLocalityMode ? 'e.g. House No. 124, Lane 4, near Sector Market' : 'e.g. 4F, 202, Block A-404'}
                 className={`bg-zinc-50/50 border rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 transition-all ${
                   errors.flatNumber ? 'border-rose-400 focus:border-rose-500' : 'border-zinc-200'
                 }`}
-                {...register('flatNumber', { required: 'Flat number is required' })}
+                {...register('flatNumber', { required: isLocalityMode ? 'Detailed address details are required' : 'Flat number is required' })}
               />
               {errors.flatNumber && <span className="text-rose-500 text-xs mt-0.5">{errors.flatNumber.message}</span>}
             </div>

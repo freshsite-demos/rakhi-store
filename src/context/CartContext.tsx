@@ -13,7 +13,7 @@ interface CartContextType {
   total: number;
   appliedCoupon: { code: string; type: 'percentage' | 'fixed'; value: number; minimumOrderValue?: number; maximumDiscount?: number } | null;
   couponError: string | null;
-  applyCouponCode: (code: string) => Promise<boolean>;
+  applyCouponCode: (code: string) => Promise<{ success: boolean; message?: string }>;
   removeCoupon: () => void;
 }
 
@@ -118,30 +118,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const total = Math.max(0, subtotal - discount);
 
-  const applyCouponCode = async (code: string): Promise<boolean> => {
+  const applyCouponCode = async (code: string): Promise<{ success: boolean; message?: string }> => {
     try {
       setCouponError(null);
       const result = await validateCouponAPI(code, subtotal);
       if (result.success && result.data) {
-        // Hack: parse the response data back to a Coupon object mock
         const couponMock: Coupon = {
           _id: '',
           code: result.data.code,
           type: result.data.type,
           value: result.data.value,
-          minimumOrderValue: 0, // already validated by backend
+          minimumOrderValue: 0,
           isActive: true,
           createdAt: '',
           updatedAt: '',
         };
         setAppliedCoupon(couponMock);
-        return true;
+        return { success: true };
       }
-      setCouponError(result.message || 'Failed to validate coupon');
-      return false;
+      const msg = result.message || 'Failed to validate coupon';
+      setCouponError(msg);
+      return { success: false, message: msg };
     } catch (error: any) {
-      setCouponError(error.response?.data?.message || 'Invalid coupon code');
-      return false;
+      const msg = error.response?.data?.message || 'Invalid coupon code';
+      setCouponError(msg);
+      return { success: false, message: msg };
     }
   };
 

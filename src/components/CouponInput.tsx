@@ -9,8 +9,7 @@ export const CouponInput: React.FC = () => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleApply = async () => {
     if (!code.trim()) return;
 
     if (subtotal <= 0) {
@@ -19,14 +18,21 @@ export const CouponInput: React.FC = () => {
     }
 
     setLoading(true);
-    const success = await applyCouponCode(code.trim());
+    const result = await applyCouponCode(code.trim());
     setLoading(false);
 
-    if (success) {
+    if (result.success) {
       showToast(`Coupon "${code.toUpperCase()}" applied successfully!`, 'success');
       setCode('');
     } else {
-      showToast(couponError || 'Invalid coupon code', 'error');
+      showToast(result.message || 'Invalid coupon code', 'error');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Stop outer form submit
+      handleApply();
     }
   };
 
@@ -50,28 +56,31 @@ export const CouponInput: React.FC = () => {
             }}
             className="p-1 rounded-lg hover:bg-emerald-100 text-emerald-700 transition-colors"
             aria-label="Remove coupon"
+            type="button"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex gap-2">
+        <div className="flex gap-2">
           <input
             type="text"
             placeholder="Enter promo code (e.g. RAKHI50)"
             value={code}
             onChange={(e) => setCode(e.target.value)}
+            onKeyDown={handleKeyDown}
             disabled={loading}
             className="flex-grow bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:border-amber-500 uppercase placeholder-zinc-400"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={handleApply}
             disabled={loading || !code.trim()}
             className="bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs px-4 rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:active:scale-100 shrink-0"
           >
             {loading ? '...' : 'Apply'}
           </button>
-        </form>
+        </div>
       )}
 
       {couponError && !appliedCoupon && (

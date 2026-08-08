@@ -43,6 +43,7 @@ export interface Society {
   _id: string;
   name: string;
   blocks: Block[];
+  isLocality?: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -61,8 +62,8 @@ export interface OrderItem {
 export interface DeliveryAddress {
   societyId: string;
   societyName: string;
-  block: string;
-  floor: string;
+  block?: string;
+  floor?: string;
   flatNumber: string;
   instructions?: string;
 }
