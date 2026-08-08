@@ -118,14 +118,6 @@ export const Login: React.FC = () => {
           </form>
         </div>
 
-        {/* Demo Credentials Alert box */}
-        <div className="mt-6 bg-amber-50 border border-amber-200/50 p-4 rounded-2xl text-xs font-semibold text-amber-900 leading-relaxed text-center">
-          <p className="font-extrabold uppercase tracking-wider text-[10px] text-amber-700 mb-1">
-            Demo Credentials
-          </p>
-          Email: <span className="font-bold underline text-amber-950">admin@rakhistore.com</span> <br />
-          Password: <span className="font-bold underline text-amber-950">adminpassword123</span>
-        </div>
       </div>
     </div>
   );

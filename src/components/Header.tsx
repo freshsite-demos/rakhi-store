@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { ShoppingBag, Settings, Gift } from 'lucide-react';
+import { ShoppingBag, Gift } from 'lucide-react';
 import CartDrawer from './CartDrawer';
 import SearchBar from './SearchBar';
 
@@ -26,9 +26,6 @@ export const Header: React.FC<HeaderProps> = ({
       <header className="sticky top-0 z-40 glass-header border-b border-zinc-100 px-4 md:px-8 py-3.5 flex items-center justify-between gap-4 transition-all duration-300">
         {/* Brand Logo & Name */}
         <Link to="/" className="flex items-center gap-3 group shrink-0">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-amber-600 flex items-center justify-center text-white text-xl shadow-md shadow-rose-500/10 group-hover:scale-105 group-hover:rotate-3 transition-all duration-300">
-            🪔
-          </div>
           <div className="flex flex-col">
             <span className="font-serif-display text-zinc-950 leading-none text-base md:text-xl tracking-wide uppercase font-extrabold">
               Rakhi<span className="bg-gradient-to-r from-amber-600 to-rose-500 bg-clip-text text-transparent lowercase font-sans font-light">atelier</span>
@@ -57,19 +54,12 @@ export const Header: React.FC<HeaderProps> = ({
             <span>View Offers</span>
           </Link>
 
-          {/* Admin Login Settings */}
-          <Link
-            to="/admin/dashboard"
-            className="p-2 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 border border-transparent hover:border-zinc-200/50 transition-all duration-200"
-            title="Admin Login"
-          >
-            <Settings className="w-4.5 h-4.5" />
-          </Link>
+
 
           {/* Cart Button */}
           <button
             onClick={() => setIsCartOpen(true)}
-            className="relative flex items-center gap-2 bg-zinc-950 hover:bg-zinc-900 text-white font-extrabold text-xs md:text-sm px-4.5 py-2.5 rounded-xl transition-all shadow-md shadow-zinc-950/10 active:scale-95 group border border-zinc-900"
+            className="relative flex items-center bg-white gap-2 bg-zinc-950 hover:bg-zinc-900 text-white font-extrabold text-xs md:text-sm px-4.5 py-2.5 rounded-xl transition-all shadow-md shadow-zinc-950/10 active:scale-95 group border border-zinc-900"
             aria-label="Open cart"
           >
             <ShoppingBag className="w-4 h-4 text-amber-400 group-hover:rotate-6 transition-transform duration-200" />
