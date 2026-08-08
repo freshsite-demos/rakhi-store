@@ -4,15 +4,17 @@ import { getOrderReviews, createReview } from '../services/review.service';
 import type { OrderItem } from '../types';
 import { useToast } from '../components/Toast';
 import Header from '../components/Header';
-import { Star, Search, CheckCircle2, AlertCircle, ArrowLeft, Send, Sparkles, PackageCheck } from 'lucide-react';
+import { Star, Search, CheckCircle2, AlertCircle, ArrowLeft, Send, Sparkles, PackageCheck, Phone } from 'lucide-react';
 
 export const ReviewOrder: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
 
   const queryOrderNumber = searchParams.get('order') || '';
+  const queryPhone = searchParams.get('phone') || '';
 
   const [inputOrderNumber, setInputOrderNumber] = useState(queryOrderNumber);
+  const [inputPhone, setInputPhone] = useState(queryPhone);
   const [loading, setLoading] = useState(false);
   const [orderData, setOrderData] = useState<{
     orderNumber: string;
@@ -28,12 +30,12 @@ export const ReviewOrder: React.FC = () => {
   const [submittingMap, setSubmittingMap] = useState<Record<string, boolean>>({});
   const [submittedMap, setSubmittedMap] = useState<Record<string, boolean>>({});
 
-  const loadOrder = async (orderNum: string) => {
-    if (!orderNum.trim()) return;
+  const loadOrder = async (orderNum: string, phoneNum: string) => {
+    if (!orderNum.trim() || !phoneNum.trim()) return;
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await getOrderReviews(orderNum.trim());
+      const res = await getOrderReviews(orderNum.trim(), phoneNum.trim());
       if (res.success && res.order) {
         setOrderData(res.order);
 
@@ -57,7 +59,7 @@ export const ReviewOrder: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Failed to load order for review:', err);
-      setErrorMsg(err.response?.data?.message || 'Could not find order. Please verify your order number.');
+      setErrorMsg(err.response?.data?.message || 'Could not verify order. Verify your Order ID and Mobile Number.');
       setOrderData(null);
     } finally {
       setLoading(false);
@@ -65,16 +67,23 @@ export const ReviewOrder: React.FC = () => {
   };
 
   useEffect(() => {
-    if (queryOrderNumber) {
+    if (queryOrderNumber && queryPhone) {
       setInputOrderNumber(queryOrderNumber);
-      loadOrder(queryOrderNumber);
+      setInputPhone(queryPhone);
+      loadOrder(queryOrderNumber, queryPhone);
     }
-  }, [queryOrderNumber]);
+  }, [queryOrderNumber, queryPhone]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputOrderNumber.trim()) return;
-    setSearchParams({ order: inputOrderNumber.trim().toUpperCase() });
+    if (!inputOrderNumber.trim() || !inputPhone.trim()) {
+      showToast('Please enter both Order ID and Mobile Number', 'error');
+      return;
+    }
+    setSearchParams({
+      order: inputOrderNumber.trim().toUpperCase(),
+      phone: inputPhone.trim(),
+    });
   };
 
   const handleRatingChange = (productId: string, star: number) => {
@@ -149,23 +158,37 @@ export const ReviewOrder: React.FC = () => {
 
         {/* Search Order Card */}
         <div className="bg-white border border-zinc-100 rounded-3xl p-6 md:p-8 shadow-sm mb-8 gold-border-glow">
-          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
-              <input
-                type="text"
-                placeholder="Enter Order ID (e.g. RK-8217)"
-                value={inputOrderNumber}
-                onChange={(e) => setInputOrderNumber(e.target.value.toUpperCase())}
-                className="w-full bg-zinc-50/70 border border-zinc-200 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-zinc-900 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-amber-500 transition-all uppercase tracking-wider"
-              />
-              <Search className="w-4 h-4 text-zinc-400 absolute right-4 top-1/2 -translate-y-1/2" />
+          <form onSubmit={handleSearchSubmit} className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="relative">
+                <Search className="w-4.5 h-4.5 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Order ID (e.g. RK-7K9M3P)"
+                  value={inputOrderNumber}
+                  onChange={(e) => setInputOrderNumber(e.target.value.toUpperCase())}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-extrabold text-zinc-900 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-amber-500 transition-all uppercase tracking-wider"
+                />
+              </div>
+
+              <div className="relative">
+                <Phone className="w-4.5 h-4.5 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" />
+                <input
+                  type="tel"
+                  placeholder="Registered 10-Digit Mobile No."
+                  value={inputPhone}
+                  onChange={(e) => setInputPhone(e.target.value)}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-extrabold text-zinc-900 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-amber-500 transition-all tracking-wider"
+                />
+              </div>
             </div>
+
             <button
               type="submit"
-              disabled={loading || !inputOrderNumber.trim()}
-              className="bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest px-6 py-3.5 rounded-2xl shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 whitespace-nowrap"
+              disabled={loading || !inputOrderNumber.trim() || !inputPhone.trim()}
+              className="w-full bg-zinc-950 hover:bg-zinc-800 text-white font-extrabold text-xs uppercase tracking-widest py-4 rounded-2xl shadow-md transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? 'Finding Order...' : 'Fetch Order'}
+              {loading ? 'Verifying Order...' : 'Fetch Order Items'}
             </button>
           </form>
         </div>

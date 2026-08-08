@@ -41,7 +41,10 @@ export const updateOrderStatus = async (id: string, status: string) => {
   return response.data;
 };
 
-export const trackOrder = async (orderNumber: string) => {
-  const response = await api.get<{ success: boolean; data: Order; message?: string }>(`/orders/track/${orderNumber}`);
+export const trackOrder = async (orderNumber: string, phone: string) => {
+  const response = await api.get<{ success: boolean; data: Order; message?: string }>(
+    `/orders/track/${orderNumber}`,
+    { params: { phone } }
+  );
   return response.data;
 };

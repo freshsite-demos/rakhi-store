@@ -48,8 +48,10 @@ export const getProductReviews = async (productId: string) => {
   return response.data;
 };
 
-export const getOrderReviews = async (orderNumber: string) => {
-  const response = await api.get<OrderReviewsResponse>(`/reviews/order/${orderNumber}`);
+export const getOrderReviews = async (orderNumber: string, phone: string) => {
+  const response = await api.get<OrderReviewsResponse>(`/reviews/order/${orderNumber}`, {
+    params: { phone },
+  });
   return response.data;
 };
 

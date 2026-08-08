@@ -121,7 +121,7 @@ export const OrderSuccess: React.FC = () => {
           <div className="w-full flex flex-col sm:flex-row gap-3 mt-10">
             <Link
               to="/track"
-              state={{ orderNumber: order.orderNumber }}
+              state={{ orderNumber: order.orderNumber, phone: order.customer.phone }}
               className="flex-1 bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs py-4 rounded-2xl shadow-md transition-all active:scale-[0.98] uppercase tracking-widest flex items-center justify-center gap-2"
             >
               <PackageCheck className="w-4 h-4" />

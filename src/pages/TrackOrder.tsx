@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import { trackOrder } from '../services/order.service';
 import type { Order } from '../types';
 import { useToast } from '../components/Toast';
-import { Search, ArrowLeft, Package, MapPin, Clipboard, CheckCircle2, Truck, Clock, ShieldCheck, XCircle, RefreshCw } from 'lucide-react';
+import { Search, ArrowLeft, Package, MapPin, Clipboard, CheckCircle2, Truck, Clock, ShieldCheck, XCircle, RefreshCw, Phone } from 'lucide-react';
 
 const STATUS_STEPS = [
   { key: 'PLACED', label: 'Placed', icon: Clock, desc: 'Waiting for store confirmation' },
@@ -18,23 +18,29 @@ export const TrackOrder: React.FC = () => {
   const location = useLocation();
   const { showToast } = useToast();
   
-  // Get initial order code from location state
-  const stateVal = location.state as { orderNumber?: string } | null;
+  // Get initial order code and phone from location state
+  const stateVal = location.state as { orderNumber?: string; phone?: string } | null;
   const [orderNumber, setOrderNumber] = useState(stateVal?.orderNumber || '');
+  const [phone, setPhone] = useState(stateVal?.phone || '');
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleTrack = async (codeToSearch = orderNumber) => {
+  const handleTrack = async (codeToSearch = orderNumber, phoneToSearch = phone) => {
     if (!codeToSearch.trim()) {
-      showToast('Please enter a valid order number', 'error');
+      showToast('Please enter your Order ID', 'error');
+      return;
+    }
+
+    if (!phoneToSearch.trim()) {
+      showToast('Please enter your registered 10-digit mobile number', 'error');
       return;
     }
 
     setLoading(true);
     setHasSearched(true);
     try {
-      const res = await trackOrder(codeToSearch.trim().toUpperCase());
+      const res = await trackOrder(codeToSearch.trim().toUpperCase(), phoneToSearch.trim());
       if (res.success && res.data) {
         setOrder(res.data);
       } else {
@@ -43,16 +49,16 @@ export const TrackOrder: React.FC = () => {
       }
     } catch (err: any) {
       setOrder(null);
-      showToast(err.response?.data?.message || 'Order not found. Check your order number.', 'error');
+      showToast(err.response?.data?.message || 'Order not found. Check your Order ID and Mobile Number.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Auto-trigger track if orderNumber was passed in router state
+  // Auto-trigger track if orderNumber and phone were passed in router state
   useEffect(() => {
-    if (stateVal?.orderNumber) {
-      handleTrack(stateVal.orderNumber);
+    if (stateVal?.orderNumber && stateVal?.phone) {
+      handleTrack(stateVal.orderNumber, stateVal.phone);
     }
   }, [stateVal]);
 
@@ -88,25 +94,43 @@ export const TrackOrder: React.FC = () => {
         </div>
 
         {/* Lookup Card */}
-        <div className="bg-white border border-zinc-100 p-5 rounded-3xl shadow-sm mb-8">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
-              <input
-                type="text"
-                placeholder="Enter Order Number (e.g. RK-9521)"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-bold uppercase tracking-wider focus:outline-none focus:bg-white focus:border-zinc-900 placeholder-zinc-400"
-              />
+        <div className="bg-white border border-zinc-100 p-6 rounded-3xl shadow-sm mb-8 gold-border-glow">
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Order ID Input */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                <input
+                  type="text"
+                  placeholder="Order ID (e.g. RK-7K9M3P)"
+                  value={orderNumber}
+                  onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-extrabold uppercase tracking-wider focus:outline-none focus:bg-white focus:border-amber-500 placeholder-zinc-400"
+                />
+              </div>
+
+              {/* Mobile Number Input */}
+              <div className="relative">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-400" />
+                <input
+                  type="tel"
+                  placeholder="10-Digit Registered Mobile No."
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl pl-11 pr-4 py-3.5 text-sm font-extrabold tracking-wider focus:outline-none focus:bg-white focus:border-amber-500 placeholder-zinc-400"
+                />
+              </div>
             </div>
+
             <button
               onClick={() => handleTrack()}
-              disabled={loading || !orderNumber.trim()}
-              className="bg-zinc-950 hover:bg-zinc-900 text-white font-extrabold text-xs px-8 py-3.5 sm:py-0 rounded-2xl transition-all shadow-md active:scale-98 disabled:opacity-50 disabled:active:scale-100 uppercase tracking-widest"
+              disabled={loading || !orderNumber.trim() || !phone.trim()}
+              className="w-full bg-zinc-950 hover:bg-zinc-900 text-white font-extrabold text-xs py-4 rounded-2xl transition-all shadow-md active:scale-98 disabled:opacity-50 disabled:active:scale-100 uppercase tracking-widest flex items-center justify-center gap-2"
             >
-              {loading ? 'Searching...' : 'Track'}
+              <Package className="w-4 h-4 text-amber-400" />
+              {loading ? 'Verifying Order...' : 'Track Delivery Status'}
             </button>
           </div>
         </div>
